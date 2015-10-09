@@ -1,3 +1,77 @@
-# TIME SERIES
+# AM pipeline
 
-Simple data pipeline showing how to create time-series aggregation using Kafka and Cassandra
+Simple data pipeline showing how to create full text search over Ashley Madison dataset.We are using Kafka, Cassandra and Elasticsearch. You can't find any Ashley Madison dataset in this repo, you have to find it by your own :)
+
+There are 4 components of AM pipeline:
+* Feeder - reads CSV file with Ashley Madison users as input and puts them into Kafka 
+* Receiver - reads users from Kafka and put them in Cassandra 3
+* Indexer - reads users from Kafka and put them in Elasticsearch
+* Analyzer - UI which provides users visualization
+    * locations of users on the map
+    * search for any particular field or search over all fields 
+    * pagination of results
+
+## Requirements 
+
+* docker 
+* docker-compose
+* go >= 1.3
+* cqlsh tool compatible with Cassandra 3
+
+### Requirements
+To install all go and bower requirements:
+```
+./start.sh deps
+```
+
+## Infrastructure
+
+### To start all services
+
+```
+./start.sh infra start
+```
+
+### To stop all services
+```
+./start.sh infra stop
+```
+
+### To remove state of all services
+```
+./start.sh infra rm
+```
+
+## Pipeline
+
+### To run Feeder:
+```
+./start.sh feeder
+```
+It will start process which reads and parses data from CSV file and pumps it into Kafka.
+
+
+### To run Receiver<Optional>:
+```
+./start.sh receiver
+```
+It will start process which reads data from Kafka inserts it into Cassandra. It's optional step - analyzer is using Elasticsearch as backend.
+
+### To run Indexer:
+```
+./start.sh indexer
+```
+It will start process which reads data from Kafka and pumps it into Elasticsearch.
+
+### To run Analyzer:
+```
+./start.sh analyzer
+```
+It will start local webserver on port 9000. Go to http://localhost:9000/ and start searching for AM users. 
+
+### <Internal use only> Dump local data from Postgres to CSV
+
+```
+COPY (SELECT pnum, longitude, latitude, email, weight, height, nickname, country, city, caption, gender, dob FROM aminno_member ORDER BY pnum DESC limit 100000 ) TO '/tmp/am-users.csv' WITH CSV HEADER DELIMITER '|' quote '''';```
+
+

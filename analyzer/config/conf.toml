@@ -1,0 +1,4 @@
+Host = ":9000"
+Statics = "analyzer/statics"
+
+Elastics = [ "http://127.0.0.1:9200" ]
