@@ -68,7 +68,7 @@ func storeUsers(conf *Config, users chan models.User) {
 	batch := session.NewBatch(gocql.UnloggedBatch)
 	stmt := `INSERT INTO users(id, email, dob, weight, height, nickname, country, city, caption, longitude, latitude, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	for user := range users {
-		if enqued > 0 && enqued%100 == 0 {
+		if enqued > 0 && enqued%BatchSize == 0 {
 			err := session.ExecuteBatch(batch)
 			if err != nil {
 				log.Fatalf("Can't execute batch. Err: %v", err)
@@ -90,14 +90,21 @@ func storeUsers(conf *Config, users chan models.User) {
 			user.Country,
 			user.City,
 			user.Caption,
-			user.Longitude,
-			user.Latitude,
+			user.Location.Longitude,
+			user.Location.Latitude,
 			user.Gender)
 
 		// put use in elastic search
 
 		enqued++
 	}
+
+	if batch.Size() > 0 {
+		if err := session.ExecuteBatch(batch); err != nil {
+			log.Fatalf("Can't execute batch. Err: %v", err)
+		}
+	}
+
 }
 
 func streamUsers(conf *Config) chan models.User {

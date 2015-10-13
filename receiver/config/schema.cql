@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS am.users (
   country int,
   city text,
   caption text,
-  longitude text,
-  latitude text,
+  longitude double,
+  latitude double,
   gender int,
   PRIMARY KEY (id));

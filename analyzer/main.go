@@ -68,6 +68,8 @@ func launchServer(conf *Config) {
 	// Handle routes
 	var statics StaticRoutes
 	r.HandleFunc("/restapi/users", api.users).Methods("GET")
+	r.HandleFunc("/restapi/autocomplete", api.nickAutocomplete).Methods("GET")
+	r.HandleFunc("/restapi/aggregations", api.aggregations).Methods("GET")
 
 	r.Handle("/{path:.*}", http.FileServer(append(statics, http.Dir(conf.Statics)))).Name("static")
 
@@ -121,6 +123,9 @@ type RestApi struct {
 func (r *RestApi) users(w http.ResponseWriter, req *http.Request) {
 	field := req.URL.Query().Get("field")
 	query := req.URL.Query().Get("query")
+	distance := req.URL.Query().Get("distance")
+	latStr := req.URL.Query().Get("lat")
+	lonStr := req.URL.Query().Get("lon")
 	size := req.URL.Query().Get("l")
 	skip := req.URL.Query().Get("s")
 
@@ -138,19 +143,42 @@ func (r *RestApi) users(w http.ResponseWriter, req *http.Request) {
 		field = "_all"
 	}
 
-	if query == "" {
-		fmt.Fprintf(w, "Query can't be empty!")
+	if query == "" && distance == "" {
+		fmt.Fprintf(w, "Query and Distance can't be empty!")
 		return
 	}
 
-	log.Printf("Start searching for users: %s", query)
+	var elasticQuery elastic.Query
+	var long, lat float64
+	if distance != "" {
+		long, err = strconv.ParseFloat(lonStr, 64)
+		if err != nil {
+			fmt.Fprintf(w, "Longitude can't be empty!")
+			return
+		}
 
-	// Search with a term query
-	termQuery := elastic.NewTermQuery(field, query)
+		lat, err = strconv.ParseFloat(latStr, 64)
+		if err != nil {
+			fmt.Fprintf(w, "Latitude can't be empty!")
+			return
+		}
+
+		log.Infof("Start searching for users in distance: %s from (lat, lng): (%f, %f)", distance, lat, long)
+
+		// Search with a geo query
+		geoQuery := elastic.NewGeoDistanceFilter("location").Distance(distance + "km").Lat(lat).Lon(long)
+		elasticQuery = elastic.NewFilteredQuery(elastic.NewMatchAllQuery()).Filter(geoQuery)
+	} else {
+		log.Infof("Start searching for users: %s", query)
+
+		// Search with a term query
+		elasticQuery = elastic.NewTermQuery(field, query)
+	}
+
 	searchResult, err := r.e.Search().
 		Index("users").
 		Type("user").
-		Query(&termQuery).
+		Query(elasticQuery).
 		From(skipInt).Size(sizeInt).
 		Do()
 	if err != nil {
@@ -178,7 +206,7 @@ func (r *RestApi) users(w http.ResponseWriter, req *http.Request) {
 			u.Score = hit.Score
 
 			response.Users = append(response.Users, u)
-			log.Printf("Found user %v", u.Email)
+			log.Infof("Found user %v", u.Email)
 		}
 	} else {
 		fmt.Fprintf(w, "Found no users")
@@ -194,8 +222,115 @@ func (r *RestApi) users(w http.ResponseWriter, req *http.Request) {
 	w.Write(json)
 }
 
+func (r *RestApi) nickAutocomplete(w http.ResponseWriter, req *http.Request) {
+	nick := req.URL.Query().Get("nick")
+	if nick == "" {
+		fmt.Fprintf(w, "Query can't be empty!")
+		return
+	}
+
+	log.Infof("Start searching for autocomplete with nick: %s", nick)
+
+	// Search with a term query
+	matchQuery := elastic.NewMatchQuery("nickname.autocomplete", nick)
+	searchResult, err := r.e.Search().
+		Index("users").
+		Type("user").
+		Query(&matchQuery).
+		From(0).Size(20).
+		Do()
+	if err != nil {
+		fmt.Fprintf(w, "Can't search for autocomplete. Err: %v", err)
+		return
+	}
+
+	nicks := make([]string, 0)
+
+	// Here's how you iterate through results with full control over each step.
+	if searchResult.Hits != nil {
+		log.Infof("Found a total of %d nicks", searchResult.Hits.TotalHits)
+
+		// Iterate through results
+		for _, hit := range searchResult.Hits.Hits {
+			var u models.User
+			err := json.Unmarshal(*hit.Source, &u)
+			if err != nil {
+				fmt.Fprintf(w, "Can't deserialize user. Err: %v", err)
+				return
+			}
+
+			nicks = append(nicks, *u.Nickname)
+			log.Infof("Found user with nick %v", *u.Nickname)
+		}
+	} else {
+		fmt.Fprintf(w, "Found no users")
+		return
+	}
+
+	json, err := json.Marshal(nicks)
+	if err != nil {
+		fmt.Fprintf(w, "Can't serialize users. Err: %v", err)
+		return
+	}
+
+	w.Write(json)
+}
+
+func (r *RestApi) aggregations(w http.ResponseWriter, req *http.Request) {
+	field := req.URL.Query().Get("field")
+	if field == "" {
+		fmt.Fprintf(w, "Field can't be empty!")
+		return
+	}
+
+	log.Printf("Start searching for aggregations of field: %s", field)
+
+	termsAgg := elastic.NewTermsAggregation().Field(field)
+
+	searchResult, err := r.e.Search().
+		Index("users").
+		Type("user").
+		Aggregation("top_field", termsAgg).
+		Do()
+	if err != nil {
+		fmt.Fprintf(w, "Can't search for autocomplete. Err: %v", err)
+		return
+	}
+
+	buckets := make([]Bucket, 0)
+	if searchResult.Aggregations != nil {
+		terms, exists := searchResult.Aggregations.Terms("top_field")
+		if !exists {
+			fmt.Fprintf(w, "Found no buckets")
+			return
+		}
+		if terms != nil && terms.Buckets != nil && len(terms.Buckets) > 0 {
+			for _, b := range terms.Buckets {
+				buckets = append(buckets, Bucket{b.Key, b.DocCount})
+			}
+		}
+	} else {
+		fmt.Fprintf(w, "Found no buckets")
+		return
+	}
+
+	json, err := json.Marshal(buckets)
+	if err != nil {
+		fmt.Fprintf(w, "Can't serialize buckets. Err: %v", err)
+		return
+	}
+
+	w.Write(json)
+}
+
 // UsersResponse holds information about users and total number of hits.
 type UsersResponse struct {
 	Users []models.User `json:"users,omitempty"`
 	Total int64         `json:"total,omitempty"`
+}
+
+// Bucket holds info about the key and the document count.
+type Bucket struct {
+	Key      interface{} `json:"key,omitempty"`
+	DocCount int64       `json:"count,omitempty"`
 }

@@ -47,8 +47,10 @@ func main() {
 	}
 
 	indexUsers(&conf, streamUsers(&conf))
-
 }
+
+// BulkSize size of the bulk.
+const BulkSize = 100
 
 func indexUsers(conf *Config, users chan models.User) {
 	// connect to the cluster
@@ -64,28 +66,42 @@ func indexUsers(conf *Config, users chan models.User) {
 
 	if !exists {
 		// Create an index if not exists
-		_, err = client.CreateIndex("users").Do()
+		_, err = client.
+			CreateIndex("users").
+			BodyString(models.ElasticMappingString).
+			Do()
 		if err != nil {
 			log.Fatalf("Can't create index. Err: %v", err)
 		}
 	}
 
 	var enqued int
+	bulkRequest := client.Bulk()
 	for user := range users {
-		// Add a document to the index
-		_, err = client.Index().
-			Index("users").
-			Type("user").
-			Id(fmt.Sprintf("%d", user.Pnum)).
-			BodyJson(user).
-			Do()
-		if err != nil {
-			log.Fatalf("Can't add user to the index. Err: %v", err)
+		if enqued > 0 && enqued%BulkSize == 0 {
+			if _, err := bulkRequest.Do(); err != nil {
+				log.Fatalf("Can't execute bulk. Err: %v", err)
+			}
+
+			log.Printf("Bulk with %v users indexed!", BulkSize)
+
+			bulkRequest = client.Bulk()
 		}
 
-		log.Printf("Indexed user %v", user.Email)
+		bulkRequest.Add(
+			elastic.NewBulkIndexRequest().
+				Index("users").
+				Type("user").
+				Id(fmt.Sprintf("%d", user.Pnum)).
+				Doc(user))
 
 		enqued++
+	}
+
+	if bulkRequest.NumberOfActions() > 0 {
+		if _, err := bulkRequest.Do(); err != nil {
+			log.Fatalf("Can't execute bulk. Err: %v", err)
+		}
 	}
 }
 

@@ -17,6 +17,7 @@ There are 4 components of AM pipeline:
 * docker-compose
 * go >= 1.3
 * cqlsh tool compatible with Cassandra 3
+* bower - to install JS requirements
 
 ### Requirements
 To install all go and bower requirements:

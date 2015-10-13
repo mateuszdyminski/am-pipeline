@@ -87,8 +87,21 @@ func streamUsers(conf *Config) chan models.User {
 				log.Fatalf("Can't deserialize pnum. Val: %s", line[0])
 			}
 
-			u.Longitude = &line[1]
-			u.Latitude = &line[2]
+			long, err := strconv.ParseFloat(line[1], 64)
+			if err != nil {
+				log.Fatalf("Can't deserialize longitude. Val: %s. Line: %d", line[1], i)
+			}
+
+			lat, err := strconv.ParseFloat(line[2], 64)
+			if err != nil {
+				log.Fatalf("Can't deserialize latitude. Val: %s. Line: %d", line[2], i)
+			}
+
+			u.Location = &models.Location{long, lat}
+			if long == 0 || lat == 0 {
+				log.Warningf("At least one value of location could be wrong. Vals long, %d, lat: %d", long, lat)
+			}
+
 			u.Email = line[3]
 			weight, err := strconv.Atoi(line[4])
 			if err != nil {
@@ -163,7 +176,6 @@ func pumpData(conf *Config, users chan models.User) {
 ProducerLoop:
 	for user := range users {
 		b, _ := json.Marshal(user)
-		log.Printf("Sending user: %s ", string(b))
 		message := &sarama.ProducerMessage{Topic: conf.Topic, Value: sarama.ByteEncoder(b)}
 		select {
 		case producer.Input() <- message:

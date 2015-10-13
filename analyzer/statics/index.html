@@ -26,11 +26,29 @@
 
     <!-- Controllers -->
     <script src="app/controllers/users.js"></script>
+    <script src="app/controllers/menu.js"></script>
     
     <!-- Services -->
     <script src="app/services/users-srv.js"></script>
 </head>
     <body id="ng-app" ng-app="AM">
+        <nav class="navbar navbar-default" ng-controller="MenuCtrl">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                  <a class="navbar-brand" href="#">Elasticsearch</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                  <ul class="nav navbar-nav">
+                    <li ng-class="{active: isActive('/full')}"><a href="#/full">Full text search</a></li>
+                    <li ng-class="{active: isActive('/auto')}"><a href="#/auto">Autocomplete</a></li>
+                    <li ng-class="{active: isActive('/facets')}"><a href="#/facets">Facets</a></li>
+                    <li ng-class="{active: isActive('/geo')}"><a href="#/geo">Geo distance</a></li>
+                  </ul>
+                </div>
+            </div>
+        </nav>
+
 	    <div class="container" ng-view></div>
 	</body>
 </html>
