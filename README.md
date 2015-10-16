@@ -1,22 +1,33 @@
 # AM pipeline
+Simple data pipeline showing how to create full text search over Ashley Madison dataset. You can't find any Ashley Madison dataset in this repo, you have to find it by your own :)
 
-Simple data pipeline showing how to create full text search over Ashley Madison dataset.We are using Kafka, Cassandra and Elasticsearch. You can't find any Ashley Madison dataset in this repo, you have to find it by your own :)
+### Description of master branch
+We are using Kafka, Cassandra and Elasticsearch.
 
 There are 4 components of AM pipeline:
-* Feeder - reads CSV file with Ashley Madison users as input and puts them into Kafka 
+* Feeder - reads CSV file with Ashley Madison users as input and puts them into Kafka
 * Receiver - reads users from Kafka and put them in Cassandra 3
 * Indexer - reads users from Kafka and put them in Elasticsearch
 * Analyzer - UI which provides users visualization
     * locations of users on the map
-    * search for any particular field or search over all fields 
+    * search for any particular field or search over all fields
     * pagination of results
+
+### Description of rethink branch
+We are using Kafka, RethinkDB and Elasticsearch.
+
+There are 4 components of AM pipeline:
+* Feeder - same like in master branch
+* Receiver - reads users from Kafka insert them in RethinkDB
+* Indexer - listens on changes from RethinkDB and inserts data into Elasticsearch
+* Analyzer - same like in master branch
 
 ## Requirements 
 
 * docker 
 * docker-compose
 * go >= 1.3
-* cqlsh tool compatible with Cassandra 3
+* cqlsh tool compatible with Cassandra 3(for master branch)
 * bower - to install JS requirements
 
 ### Requirements

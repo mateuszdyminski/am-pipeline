@@ -10,6 +10,8 @@ deps() {
 	go get github.com/mateuszdyminski/am-pipeline/models
 	go get github.com/gocql/gocql
 	go get gopkg.in/olivere/elastic.v2
+	go get github.com/wvanbergen/kafka/consumergroup
+	go get github.com/dancannon/gorethink
 
 	cd analyzer/statics && bower install
 

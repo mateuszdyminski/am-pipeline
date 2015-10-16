@@ -22,7 +22,7 @@ type Location struct {
 	Latitude  float64 `json:"lat,omitempty"`
 }
 
-// ElasticMappingString describes index of user in ELasticsearch.
+// ElasticMappingString describes index of user in Elasticsearch.
 const ElasticMappingString = `
         {
             "settings" : {
