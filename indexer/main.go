@@ -1,19 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
+	r "github.com/dancannon/gorethink"
 	"github.com/mateuszdyminski/am-pipeline/models"
-	"github.com/wvanbergen/kafka/consumergroup"
 	"gopkg.in/olivere/elastic.v2"
 )
 
@@ -21,9 +18,9 @@ var configPath string
 
 // Config holds configuration of feeder.
 type Config struct {
-	Zookeepers []string
-	Topic      string
-	Elastics   []string
+	Rethinkdb string
+	Topic     string
+	Elastics  []string
 }
 
 func init() {
@@ -108,55 +105,52 @@ func indexUsers(conf *Config, users chan models.User) {
 }
 
 func streamUsers(conf *Config) chan models.User {
-	config := consumergroup.NewConfig()
-	config.Offsets.Initial = sarama.OffsetOldest
-	config.Offsets.CommitInterval = 100 * time.Millisecond
-
-	consumer, err := consumergroup.JoinConsumerGroup(
-		"indexer",
-		[]string{conf.Topic},
-		conf.Zookeepers,
-		config)
+	session, err := r.Connect(r.ConnectOpts{Address: conf.Rethinkdb})
 	if err != nil {
-		log.Fatalf("Can't create consumer. Err: %v", err)
+		log.Fatalln(err.Error())
 	}
 
-	var received, errors int
+	var received int
 
 	// Trap SIGINT to trigger a graceful shutdown.
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
+	rows, err := r.DB("am").Table("users").Changes().Run(session)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
 	out := make(chan models.User, 1024)
 	go func() {
 		for {
 			select {
-			case msg := <-consumer.Messages():
-				received++
-
-				var user models.User
-				if err := json.Unmarshal(msg.Value, &user); err != nil {
-					log.Fatalf("Can't unmarshal data from queue! Err: %v", err)
-				}
-
-				if *user.Dob == "0000-00-00" {
-					user.Dob = nil
-				}
-
-				out <- user
-				consumer.CommitUpto(msg)
-			case err := <-consumer.Errors():
-				errors++
-				log.Printf("Error reading from topic! Err: %v", err)
 			case <-signals:
-				log.Printf("Start consumer closing")
-				consumer.Close()
-				log.Printf("Consumer closed!")
-				close(out)
-				log.Printf("Successfully consumed: %d; errors: %d", received, errors)
+				log.Printf("Start rethink driver closing")
+				rows.Close()
+				session.Close()
+				log.Printf("Rethink driver closed!")
 				return
 			}
 		}
+	}()
+
+	go func() {
+		var value r.ChangeResponse
+		for rows.Next(&value) {
+			log.Infof("Get user changes: %+v", value)
+
+			usr, err := models.ParseUser(value.NewValue)
+			if err != nil {
+				log.Fatalf("Can't decode rethinkDB changes. Err: %v", err)
+			}
+
+			out <- usr
+			received++
+		}
+
+		close(out)
+		log.Printf("Successfully consumed: %d users from rethinkdb", received)
 	}()
 
 	return out

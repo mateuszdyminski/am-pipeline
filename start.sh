@@ -59,6 +59,11 @@ case "$CMD" in
 			stop) docker-compose -f infra/all/docker-compose.yml stop ;;
 			kill) docker-compose -f infra/all/docker-compose.yml kill ;;
 			rm) docker-compose -f infra/all/docker-compose.yml rm ;;
+			restart)
+				docker-compose -f infra/all/docker-compose.yml kill
+				docker-compose -f infra/all/docker-compose.yml rm -f
+				docker-compose -f infra/all/docker-compose.yml up -d
+			;;
 			*) echo 'Choose one of following args: {start, stop, kill, rm}'
 		esac
 	;;

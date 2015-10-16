@@ -1,4 +1,4 @@
 Zookeepers = [ "127.0.0.1:2181" ]
 Topic = "time-series"
 
-CassNodes = [ "127.0.0.1" ]
+Rethinkdb = "127.0.0.1:28015"

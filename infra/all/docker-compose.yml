@@ -13,25 +13,14 @@ kafka:
     KAFKA_CREATE_TOPICS: "time-series:1:1"
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
-cassandra:
-  image: mateuszdyminski/cassandra:3
+rethinkdb:
+  image: rethinkdb
   ports:
-    - "9160:9160"
-    - "9042:9042"
-    - "7000:7000"
-    - "7001:7001"
-    - "7199:7199"
+    - "8080:8080"
+    - "28015:28015"
+    - "29015:29015"
 elasticsearch:
   image: elasticsearch
   ports:
     - "9200:9200"
     - "9300:9300"
-# etcd:
-#   image: quay.io/coreos/etcd-git
-#   environment: 
-#     ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379,http://0.0.0.0:4001"
-#     ETCD_LISTEN_PEER_URLS: "http://0.0.0.0:2380,http://0.0.0.0:7001"
-#     ETCD_ADVERTISE_CLIENT_URLS: "http://0.0.0.0:2379,http://0.0.0.0:4001"
-#   ports:
-#     - "2379:2379"
-#     - "2380:2380"

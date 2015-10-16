@@ -11,9 +11,9 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
-	"github.com/gocql/gocql"
 	"github.com/mateuszdyminski/am-pipeline/models"
 	"github.com/wvanbergen/kafka/consumergroup"
+	r "github.com/dancannon/gorethink"
 )
 
 var configPath string
@@ -22,7 +22,7 @@ var configPath string
 type Config struct {
 	Zookeepers   []string
 	Topic     string
-	CassNodes []string
+	Rethinkdb string
 }
 
 func init() {
@@ -55,56 +55,41 @@ func main() {
 const BatchSize = 100
 
 func storeUsers(conf *Config, users chan models.User) {
-	// connect to the cluster
-	cluster := gocql.NewCluster(conf.CassNodes...)
-	cluster.Keyspace = "am"
-	cluster.Consistency = gocql.Quorum
-	cluster.ProtoVersion = 3
-	session, err := cluster.CreateSession()
+	session, err := r.Connect(r.ConnectOpts{ Address: conf.Rethinkdb })
 	if err != nil {
-		log.Fatalf("Can't create cassandra session. Err: %v", err)
+	    log.Fatalln(err.Error())
 	}
-	defer session.Close()
+	setupDb(session)
 
 	var enqued int
-	batch := session.NewBatch(gocql.UnloggedBatch)
-	stmt := `INSERT INTO users(id, email, dob, weight, height, nickname, country, city, caption, longitude, latitude, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	usersBatch := make([]models.User, 0)
 	for user := range users {
 		if enqued > 0 && enqued%BatchSize == 0 {
-			err := session.ExecuteBatch(batch)
+			resp, err := r.DB("am").Table("users").Insert(usersBatch).RunWrite(session, r.RunOpts{
+				MinBatchRows: BatchSize,
+				MaxBatchRows: BatchSize,
+			})
 			if err != nil {
-				log.Fatalf("Can't execute batch. Err: %v", err)
+				log.Fatalf("Can't insert users to rethinkdb. Err: %v", err)
 			}
 
-			log.Printf("Batch with %v users saved! Total users inserted: %v", BatchSize, enqued)
-
-			batch = gocql.NewBatch(gocql.UnloggedBatch)
+			usersBatch = make([]models.User, 0)
+			log.Infof("%d users inserted. Total inserted users: %d", resp.Inserted, enqued)
 		}
 
-		// insert a user
-		batch.Query(stmt,
-			user.Pnum,
-			user.Email,
-			user.Dob,
-			user.Weight,
-			user.Height,
-			user.Nickname,
-			user.Country,
-			user.City,
-			user.Caption,
-			user.Location.Longitude,
-			user.Location.Latitude,
-			user.Gender)
-
+		usersBatch = append(usersBatch, user)
 		enqued++
 	}
 
-	if batch.Size() > 0 {
-		if err := session.ExecuteBatch(batch); err != nil {
-			log.Fatalf("Can't execute batch. Err: %v", err)
-		}
-	}
-
+	 if len(usersBatch) > 0 {
+		 _, err := r.DB("am").Table("users").Insert(usersBatch).RunWrite(session, r.RunOpts{
+			 MinBatchRows: BatchSize,
+			 MaxBatchRows: BatchSize,
+		 })
+		 if err != nil {
+			 log.Fatalf("Can't insert users to rethinkdb. Err: %v", err)
+		 }
+	 }
 }
 
 func streamUsers(conf *Config) chan models.User {
@@ -160,4 +145,19 @@ func streamUsers(conf *Config) chan models.User {
 	}()
 
 	return out
+}
+
+func setupDb(session *r.Session) {
+	// Setup database + tables
+	if err := r.DBCreate("am").Exec(session); err != nil {
+		log.Warningf("Can't create DB in rethinkdb. Propably DB is aready created. Err: %v", err)
+	} else {
+		log.Infof("DB created")
+	}
+
+	if err := r.DB("am").TableCreate("users").Exec(session); err != nil {
+		log.Warningf("Can't create table in rethinkdb. Propably table is aready created. Err: %v", err)
+	} else {
+		log.Infof("DB table created!")
+	}
 }

@@ -1,4 +1,4 @@
-Zookeepers = [ "127.0.0.1:2181" ]
+Rethinkdb = "127.0.0.1:28015"
 Topic = "time-series"
 
 Elastics = [ "http://127.0.0.1:9200" ]
