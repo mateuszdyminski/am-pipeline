@@ -6,19 +6,21 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocql/gocql"
 	"github.com/mateuszdyminski/am-pipeline/models"
+	"github.com/wvanbergen/kafka/consumergroup"
 )
 
 var configPath string
 
 // Config holds configuration of feeder.
 type Config struct {
-	Brokers   []string
+	Zookeepers   []string
 	Topic     string
 	CassNodes []string
 }
@@ -74,7 +76,7 @@ func storeUsers(conf *Config, users chan models.User) {
 				log.Fatalf("Can't execute batch. Err: %v", err)
 			}
 
-			log.Printf("Batch with %v users saved!", BatchSize)
+			log.Printf("Batch with %v users saved! Total users inserted: %v", BatchSize, enqued)
 
 			batch = gocql.NewBatch(gocql.UnloggedBatch)
 		}
@@ -94,8 +96,6 @@ func storeUsers(conf *Config, users chan models.User) {
 			user.Location.Latitude,
 			user.Gender)
 
-		// put use in elastic search
-
 		enqued++
 	}
 
@@ -108,28 +108,30 @@ func storeUsers(conf *Config, users chan models.User) {
 }
 
 func streamUsers(conf *Config) chan models.User {
-	consumer, err := sarama.NewConsumer(conf.Brokers, sarama.NewConfig())
+	config := consumergroup.NewConfig()
+	config.Offsets.Initial = sarama.OffsetOldest
+	config.Offsets.CommitInterval = 100 * time.Millisecond
+
+	consumer, err := consumergroup.JoinConsumerGroup(
+		"inserter",
+		[]string{conf.Topic},
+		conf.Zookeepers,
+		config)
 	if err != nil {
-		log.Fatalf("Can't create consumer! Err: %v", err)
+		log.Fatalf("Can't create consumer. Err: %v", err)
 	}
+
+	var received, errors int
 
 	// Trap SIGINT to trigger a graceful shutdown.
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
-	var received, errors int
-
-	partitionConsumer, err := consumer.ConsumePartition(conf.Topic, 0, sarama.OffsetOldest)
-	if err != nil {
-		log.Fatalf("Can't create partition consumer! Err: %v", err)
-	}
-
 	out := make(chan models.User, 1024)
-
 	go func() {
 		for {
 			select {
-			case msg := <-partitionConsumer.Messages():
+			case msg := <-consumer.Messages():
 				received++
 
 				var user models.User
@@ -137,12 +139,19 @@ func streamUsers(conf *Config) chan models.User {
 					log.Fatalf("Can't unmarshal data from queue! Err: %v", err)
 				}
 
+				if *user.Dob == "0000-00-00" {
+					user.Dob = nil
+				}
+
 				out <- user
-			case err := <-partitionConsumer.Errors():
+				consumer.CommitUpto(msg)
+			case err := <-consumer.Errors():
 				errors++
 				log.Printf("Error reading from topic! Err: %v", err)
 			case <-signals:
-				partitionConsumer.AsyncClose()
+				log.Printf("Start consumer closing")
+				consumer.Close()
+				log.Printf("Consumer closed!")
 				close(out)
 				log.Printf("Successfully consumed: %d; errors: %d", received, errors)
 				return
