@@ -62,7 +62,15 @@ case "$CMD" in
 			*) echo 'Choose one of following args: {start, stop, kill, rm}'
 		esac
 	;;
+	storm)
+		case "$SUBCMD" in
+			start) storm jar target/pipeline-0.1.jar com.test.Pipeline am-pipeline -c nimbus.host=127.0.0.1 -c nimbus.thrift.port=49627 ;;
+			kill) storm kill am-pipeline -c nimbus.host=127.0.0.1 -c nimbus.thrift.port=49627 ;;
+			build) cd storm && mvn package ;;
+			*) echo 'Choose one of following args: {start, kill, build}'
+		esac
+	;;
 	*)
-		echo 'Choose one of following args: {deps, feeder, indexer, receiver, analyzer, infra}'
+		echo 'Choose one of following args: {deps, feeder, indexer, receiver, analyzer, infra, storm}'
 	;;
 esac

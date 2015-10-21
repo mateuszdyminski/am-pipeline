@@ -2,6 +2,7 @@ zookeeper:
   image: wurstmeister/zookeeper
   ports: 
     - "2181:2181"
+    - "22"
 kafka:
   build: .
   ports:
@@ -9,10 +10,37 @@ kafka:
   links: 
     - zookeeper:zk
   environment:
-    KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+    KAFKA_ADVERTISED_HOST_NAME: 172.17.42.1
     KAFKA_CREATE_TOPICS: "time-series:1:1"
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
+nimbus:
+  image: wurstmeister/storm-nimbus
+  ports:
+    - "49773:3773"
+    - "49772:3772"
+    - "49627:6627"
+    - "22"
+  links:
+    - zookeeper:zk
+supervisor:
+  image: wurstmeister/storm-supervisor
+  ports:
+    - "8000"
+    - "22"
+  links:
+    - nimbus:nimbus
+    - zookeeper:zk
+    - cassandra:cass
+    - elasticsearch:es
+ui:
+  image: wurstmeister/storm-ui
+  ports:
+    - "49080:8080"
+    - "22"
+  links:
+    - nimbus:nimbus
+    - zookeeper:zk
 cassandra:
   image: mateuszdyminski/cassandra:3
   ports:
@@ -26,12 +54,3 @@ elasticsearch:
   ports:
     - "9200:9200"
     - "9300:9300"
-# etcd:
-#   image: quay.io/coreos/etcd-git
-#   environment: 
-#     ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379,http://0.0.0.0:4001"
-#     ETCD_LISTEN_PEER_URLS: "http://0.0.0.0:2380,http://0.0.0.0:7001"
-#     ETCD_ADVERTISE_CLIENT_URLS: "http://0.0.0.0:2379,http://0.0.0.0:4001"
-#   ports:
-#     - "2379:2379"
-#     - "2380:2380"

@@ -22,6 +22,14 @@ There are 4 components of AM pipeline:
 * Indexer - listens on changes from RethinkDB and inserts data into Elasticsearch
 * Analyzer - same like in master branch
 
+### Description of storm branch
+We are using Kafka, Storm, Cassandra and Elasticsearch.
+
+There are 4 components of AM pipeline:
+* Feeder - same like in master branch
+* Storm - reads users from Kafka then persists and indexes them within Storm topology
+* Analyzer - same like in master branch
+
 ## Requirements 
 
 * docker 
@@ -29,6 +37,9 @@ There are 4 components of AM pipeline:
 * go >= 1.3
 * cqlsh tool compatible with Cassandra 3(for master branch)
 * bower - to install JS requirements
+* maven (for branch storm)
+* java jdk >= 6 (for branch storm)
+* storm (for branch storm)
 
 ### Requirements
 To install all go and bower requirements:
