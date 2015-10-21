@@ -1,0 +1,322 @@
+How to build data pipelines with Kafka, Cassandra and Elasticsearch
+
+23.10.2015
+
+Mateusz Dymiński
+
+
+* Agenda
+- Goal
+- Part 1
+	Kafka basics
+	Cassandra basics
+	Elasticsearch basics 
+	Running primitive data pipeline with Kafka, Cassandra and Elasticsearch 
+	Analyze Ashley Madison dataset
+- Part 2
+	RethinkDB basics
+	Running improved data pipeline with Kafka, RethinkDB and Elasticsearch 
+- Part 3
+	Storm basics
+	Running almost perfect data pipeline with Kafka, Storm and Elasticsearch
+
+* Goal
+
+- Build fault-tolerant, scalable, highly-available data pipeline. 
+- Create search service to drill down Ashley Medison users dataset.
+- Ensure that users between db and search engine is consistent.
+- Have fun!
+
+* Part 1
+	
+First iteration of data pipeline
+
+* Running primitive data pipeline with Kafka, Cassandra and Elasticsearch 
+
+	ssh -p 3022 ubuntu@localhost   - password: ubuntu
+
+To run infrastructure
+	
+	cd am-pipeline
+	./start.sh infra start
+
+To check if all services are working
+
+	docker ps 
+
+To create schema 
+
+	cqlsh -f receiver/config/schema.cql
+
+To play with cassandra
+	
+	cqlsh 
+
+* Running primitive data pipeline with Kafka, Cassandra and Elasticsearch 
+
+To start receiver
+	
+	./start.sh receiver
+
+To start indexer
+	
+	./start.sh indexer
+
+To start feeder
+	
+	./start.sh feeder
+
+To start analyzer
+	
+	./start.sh analyzer
+
+* Kafka basics - 1
+
+- Kafka maintains feeds of messages in categories called topics.
+- We'll call processes that publish messages to a Kafka topic producers.
+- We'll call processes that subscribe to topics and process the feed of published messages consumers..
+- Kafka is run as a cluster comprised of one or more servers each of which is called a broker.
+
+.image data-pipeline/kafka1.png
+source: http://kafka.apache.org/documentation.html
+
+* Kafka basics - 2
+
+.image data-pipeline/kafka2.png
+source: http://kafka.apache.org/documentation.html
+
+* Kafka basics - 3
+
+Each partition is an ordered, immutable sequence of messages that is continually appended to a commit log. The messages in the partitions are each assigned a sequential id number called the offset that uniquely identifies each message within the partition.
+
+The Kafka cluster retains all published messages whether or not they have been consumed for a configurable period of time. For example if the log retention is set to two days, then for the two days after a message is published it is available for consumption, after which it will be discarded to free up space. Kafka's performance is effectively constant with respect to data size so retaining lots of data is not a problem.
+
+* Kafka basics - 4
+
+	config := NewConfig()
+	config.Offsets.Initial = OffsetOldest
+	config.Offsets.CommitInterval = 100 * time.Millisecond
+
+	consumer, err := JoinConsumerGroup(
+		"customer-group-id",
+		[]string{"topic-name"},
+		"zk:2181",
+		config)
+	if err != nil {
+		log.Fatalf("Can't create consumer. Err: %v", err)
+	}
+
+* Cassandra basics - 1
+
+- Decentralized
+Every node in the cluster has the same role. There is no single point of failure. Data is distributed across the cluster (so each node contains different data), but there is no master as every node can service any request.
+
+- Supports replication and multi data center replication
+Replication strategies are configurable. Cassandra is designed as a distributed system, for deployment of large numbers of nodes across multiple data centers. Key features of Cassandra’s distributed architecture are specifically tailored for multiple-data center deployment, for redundancy, for failover and disaster recovery.
+
+- Scalability
+Read and write throughput both increase linearly as new machines are added, with no downtime or interruption to applications.
+
+* Cassandra basics - 2
+
+- Fault-tolerant
+Data is automatically replicated to multiple nodes for fault-tolerance. Replication across multiple data centers is supported. Failed nodes can be replaced with no downtime.
+
+- Tunable consistency
+Writes and reads offer a tunable level of consistency, all the way from "writes never fail" to "block for all replicas to be readable", with the quorum level in the middle.[3]
+
+- Query language
+Cassandra introduces CQL (Cassandra Query Language), a SQL-like alternative to the traditional RPC interface. Language drivers are available for almost all common languages.
+
+* Cassandra basics - cql
+
+	CREATE KEYSPACE IF NOT EXISTS am WITH replication = {'class':'SimpleStrategy', 'replication_factor':1};
+
+	CREATE TABLE IF NOT EXISTS am.users (
+	  id bigint,
+	  email text,
+	  dob text,
+	  weight int,
+	  height int,
+	  nickname text,
+	  country int,
+	  city text,
+	  caption text,
+	  longitude double,
+	  latitude double,
+	  gender int,
+	  PRIMARY KEY (id));
+
+	INSERT INTO am.users(id, email, dob, weight, height, nickname, country, city, caption, longitude, latitude, gender) VALUES (1, 'test@test.com', '1988-01-18', 89000, 194, 'test', 1, 'Wroclaw', 'test caption', 17.089, 17.89, 1);
+
+	SELECT * FROM am.users;
+
+* Elasticsearch basics - 1
+
+- Real-Time Data
+How long can you wait for insights on your fast-moving data? With Elasticsearch, all data is immediately made available for search and analytics.
+
+- Distributed
+Elasticsearch allows you to start small and scale horizontally as you grow. Simply add more nodes, and let the cluster automatically take advantage of the extra hardware.
+
+- High Availability
+Elasticsearch clusters are resilient — they will detect new or failed nodes, and reorganize and rebalance data automatically, to ensure that your data is safe and accessible.
+
+* Elasticsearch basics - 2
+
+- Multitenancy
+A cluster may contain multiple indices that can be queried independently or as a group. Index aliases allow filtered views of an index, and may be updated transparently to your application.
+
+- Full-Text Search
+Elasticsearch builds distributed capabilities on top of Apache Lucene to provide the most powerful full- text search capabilities available in any open source product. Powerful, developer-friendly query API supports multilingual search, geolocation, contextual did-you-mean suggestions, autocomplete, and result snippets.
+
+- Document-Oriented
+Store complex real world entities in Elasticsearch as structured JSON documents. All fields are indexed by default, and all the indices can be used in a single query, to easily return complex results at breathtaking speed.
+
+* Elasticsearch basics - 3
+
+- Schema-Free
+Elasticsearch allows you to get started fast. Simply index a JSON document and it will automatically detect the data structure and types, create an index, and make your data searchable. You also have full control to customize how your data is indexed.
+
+- Developer-Friendly, RESTful API
+Elasticsearch is API driven. Almost any action can be performed using a simple RESTful API using JSON over HTTP. Client libraries are available for many programming languages.
+
+- Per-Operation Persistence
+Elasticsearch puts your data safety first. Document changes are recorded in transaction logs on multiple nodes in the cluster to minimize the chance of any data loss.
+
+* Elasticsearch basics - 4
+
+To get index
+
+	curl -XGET 'http://localhost:9200/users?pretty'
+
+To get mapping
+
+	curl -XGET 'http://localhost:9200/users/_mapping/user?pretty'
+
+To search for user
+	
+	curl -XGET 'http://localhost:9200/users/_search?pretty&q=dob=1988'
+
+To search for user
+	
+	curl -XGET 'http://localhost:9200/users/_search?pretty&q=dob=1988'
+
+
+* Analyze Ashley Madison dataset
+
+Go to:
+	http://localhost:9000
+
+* Part 2
+
+Second iteration of data pipeline - push notification
+
+Stop current infrastructure
+	./start.sh infra kill
+	./start.sh infra rm
+
+Go to 'rethink' branch
+	git checkout rethink
+
+* Running improved data pipeline with Kafka, RethinkDB and Elasticsearch
+
+To start infrastructure
+	./start.sh infra start
+
+To start receiver
+	
+	./start.sh receiver
+
+To start indexer
+	
+	./start.sh indexer
+
+To start feeder
+	
+	./start.sh feeder
+
+To start analyzer
+	
+	./start.sh analyzer
+
+* RethinkDB basics - 1
+
+Go to Homepage:
+	https://rethinkdb.com/
+
+Go to Dashboard:
+	http://localhost:8080
+
+* RethinkDB basics - When is RethinkDB a good choice?
+
+RethinkDB is a great choice when your applications could benefit from realtime feeds to your data.
+
+The query-response database access model works well on the web because it maps directly to HTTP’s request-response. However, modern applications require sending data directly to the client in realtime. Use cases where companies benefited from RethinkDB’s realtime push architecture include:
+
+- Collaborative web and mobile apps
+- Streaming analytics apps
+- Multiplayer games
+- Realtime marketplaces
+- Connected devices
+
+* RethinkDB basics - When is RethinkDB a good choice?
+
+For example, when a user changes the position of a button in a collaborative design app, the server has to notify other users that are simultaneously working on the same project. Web browsers support these use cases via WebSockets and long-lived HTTP connections, but adapting database systems to realtime needs still presents a huge engineering challenge.
+
+RethinkDB is the first open-source, scalable database designed specifically to push data to applications in realtime. It dramatically reduces the time and effort necessary to build scalable realtime apps.
+
+
+* Part 3
+
+last iteration of data pipeline - stream solution
+
+Stop current infrastructure
+	./start.sh infra kill
+	./start.sh infra rm
+
+Go to 'storm' branch
+	git checkout rethink
+
+* Running almost perfect data pipeline with Kafka, Storm and Elasticsearch 
+
+To start infrastructure
+	./start.sh infra start
+
+To build topology
+	
+	./start.sh storm build
+
+To deploy topology
+	
+	./start.sh storm start
+
+To start feeder
+	
+	./start.sh storm start
+
+To start analyzer
+	
+	./start.sh analyzer
+
+* Storm basics - Abstractions
+
+- Spout
+- Bolt
+- Supervisor
+- Worker
+- Nimbus 
+- Topology
+
+* Storm basics - Abstractions
+		
+.image data-pipeline/storm1.png 400 _
+source: http://storm.apache.org/
+
+* Storm basics - types
+
+- Classic topology 
+- Trident
+- Distributed RPC
+
+* Thank you!
