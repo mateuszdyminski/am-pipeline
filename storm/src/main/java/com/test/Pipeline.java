@@ -3,6 +3,9 @@ package com.test;
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
+import com.esotericsoftware.kryo.serializers.FieldSerializer;
+import com.test.model.Location;
+import com.test.model.User;
 import storm.kafka.BrokerHosts;
 import storm.kafka.KafkaSpout;
 import storm.kafka.SpoutConfig;
@@ -23,15 +26,16 @@ public class Pipeline {
 
         builder.setSpout("spout", kafkaSpout, 1);
 
-        builder.setBolt("insert", new Inserter(), 3).shuffleGrouping("spout");
-        builder.setBolt("index", new Indexer(), 3).shuffleGrouping("insert");
+        builder.setBolt("insert", new Inserter(), 2).shuffleGrouping("spout");
+        builder.setBolt("index", new Indexer(), 2).shuffleGrouping("insert");
 
         Config conf = new Config();
         conf.setDebug(true);
+        conf.setFallBackOnJavaSerialization(false);
+        conf.registerSerialization(User.class, FieldSerializer.class);
+        conf.registerSerialization(Location.class, FieldSerializer.class);
 
-        System.out.println("Submitting topology");
-        conf.setNumWorkers(4);
+        conf.setNumWorkers(2);
         StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
-        System.out.println("Topology submitted");
     }
 }
