@@ -301,11 +301,16 @@ To start analyzer
 
 * Storm basics - Abstractions
 
-- Spout
-- Bolt
+To open storm UI:
+	http://localhost:49080
+
+- Nimbus 
 - Supervisor
 - Worker
-- Nimbus 
+- Executor 
+- Task
+- Spout
+- Bolt
 - Topology
 
 * Storm basics - Abstractions
