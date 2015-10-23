@@ -1,11 +1,11 @@
 # AM pipeline
-Simple data pipeline showing how to create full text search over Ashley Madison dataset. You can't find any Ashley Madison dataset in this repo, you have to find it by your own :)
+Simple data pipeline showing how to create full text search over some dataset. 
 
 ### Description of master branch
 We are using Kafka, Cassandra and Elasticsearch.
 
 There are 4 components of AM pipeline:
-* Feeder - reads CSV file with Ashley Madison users as input and puts them into Kafka
+* Feeder - reads CSV file with users as input and puts them into Kafka
 * Receiver - reads users from Kafka and put them in Cassandra 3
 * Indexer - reads users from Kafka and put them in Elasticsearch
 * Analyzer - UI which provides users visualization
