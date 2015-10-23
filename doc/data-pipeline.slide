@@ -12,7 +12,7 @@ Mateusz Dymiński
 	Cassandra basics
 	Elasticsearch basics 
 	Running primitive data pipeline with Kafka, Cassandra and Elasticsearch 
-	Analyze Ashley Madison dataset
+	Analyze dataset
 - Part 2
 	RethinkDB basics
 	Running improved data pipeline with Kafka, RethinkDB and Elasticsearch 
@@ -23,7 +23,7 @@ Mateusz Dymiński
 * Goal
 
 - Build fault-tolerant, scalable, highly-available data pipeline. 
-- Create search service to drill down Ashley Medison users dataset.
+- Create search service to drill down users dataset.
 - Ensure that users between db and search engine is consistent.
 - Have fun!
 
@@ -203,7 +203,7 @@ To search for user
 	curl -XGET 'http://localhost:9200/users/_search?pretty&q=dob=1988'
 
 
-* Analyze Ashley Madison dataset
+* Analyze dataset
 
 Go to:
 	http://localhost:9000
