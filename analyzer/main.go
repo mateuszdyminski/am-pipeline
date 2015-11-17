@@ -128,6 +128,7 @@ func (r *RestApi) users(w http.ResponseWriter, req *http.Request) {
 	lonStr := req.URL.Query().Get("lon")
 	size := req.URL.Query().Get("l")
 	skip := req.URL.Query().Get("s")
+	wildcard := req.URL.Query().Get("w")
 
 	sizeInt, err := strconv.Atoi(size)
 	if err != nil {
@@ -171,8 +172,15 @@ func (r *RestApi) users(w http.ResponseWriter, req *http.Request) {
 	} else {
 		log.Infof("Start searching for users: %s", query)
 
-		// Search with a term query
-		elasticQuery = elastic.NewTermQuery(field, query)
+		if wildcard == "true" {
+			// Search for
+			elasticQuery = elastic.NewSimpleQueryStringQuery(query).Field(field)
+		} else {
+			// Search with a term query
+			elasticQuery = elastic.NewMatchQuery(field, query)
+		}
+
+
 	}
 
 	searchResult, err := r.e.Search().

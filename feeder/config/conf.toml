@@ -1,4 +1,7 @@
 Brokers = [ "127.0.0.1:9092" ]
 Topic = "time-series"
 
+SourceDataType = "db"
+
+DbString = "dbname=imtdev host=localhost user=imtdev password=imt port=5432 sslmode=disable"
 CsvPath = "feeder/data/am-users.csv"

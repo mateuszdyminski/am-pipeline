@@ -13,6 +13,7 @@ angular.module('AM').controller('UsersCtrl', function($scope, $location, UsersSe
         }
         $scope.query.s = ($scope.currentPage - 1) * $scope.itemsPerPage;
         $scope.query.l = $scope.itemsPerPage;
+        $scope.query.w = $scope.query.wildcard;
 
         UsersService.findUsers($scope.query)
             .success(function(response, status, headers) {

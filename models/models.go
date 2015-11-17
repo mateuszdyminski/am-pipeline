@@ -114,7 +114,7 @@ const ElasticMappingString = `
                         },
                         "country" : { "type" : "integer" },
                         "city" : { "type" : "string" },
-                        "caption" : { "type" : "string" },
+                        "caption" : { "type" : "string", "index" : "analyzed" },
                         "location" : { "type" : "geo_point" },
                         "gender" : { "type" : "integer" }
                     }

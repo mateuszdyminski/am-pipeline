@@ -14,8 +14,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
+	"database/sql"
 	"github.com/BurntSushi/toml"
 	"github.com/Shopify/sarama"
+	_ "github.com/lib/pq"
 	"github.com/mateuszdyminski/am-pipeline/models"
 )
 
@@ -23,9 +25,11 @@ var configPath string
 
 // Config holds configuration of feeder.
 type Config struct {
-	Brokers []string
-	Topic   string
-	CsvPath string
+	Brokers        []string
+	Topic          string
+	DbString       string
+	CsvPath        string
+	SourceDataType string
 }
 
 func init() {
@@ -55,6 +59,64 @@ func main() {
 }
 
 func streamUsers(conf *Config) chan models.User {
+	if conf.SourceDataType == "db" {
+		return streamDbUsers(conf)
+	}
+
+	if conf.SourceDataType == "csv" {
+		return streamCsvUsers(conf)
+	}
+
+	log.Fatalf("Can't find proper data source type")
+	return nil
+}
+
+func streamDbUsers(conf *Config) chan models.User {
+	db, err := sql.Open("postgres", conf.DbString)
+	if err != nil {
+		log.Fatal("can't open database conn:", err)
+	}
+
+	log.Infof("Start reading users from DB!")
+
+	out := make(chan models.User, 1024)
+	go func() {
+		rows, err := db.Query("select pnum, email, dob, weight, height, nickname, country, city, caption, longitude, latitude, gender from aminno_member limit 1000000")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer rows.Close()
+
+		noOfUsers := 0
+		for rows.Next() {
+			u := models.User{}
+			u.Location = &models.Location{}
+			if err := rows.Scan(&u.Pnum, &u.Email, &u.Dob, &u.Weight, &u.Height, &u.Nickname, &u.Country, &u.City, &u.Caption, &u.Location.Longitude, &u.Location.Latitude, &u.Gender); err != nil {
+				log.Fatal(err)
+			}
+
+			out <- u
+
+			if noOfUsers % 100 == 0 {
+				log.Printf("Total no of read users: %v", noOfUsers)
+			}
+
+			noOfUsers++
+		}
+
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Infof("All users sent")
+		close(out)
+	}()
+
+	return out
+}
+
+func streamCsvUsers(conf *Config) chan models.User {
 	f, err := os.Open(conf.CsvPath)
 	if err != nil {
 		log.Fatal("can't file with users:", err)
