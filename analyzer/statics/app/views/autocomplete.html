@@ -1,20 +1,18 @@
 <div ng-controller="UsersCtrl">
     <div>
     	<div ng-init="query.field = 'nickname'"></div>
-        <form ng-submit="findUsers()">
+        <form ng-submit="findUsers()" class="form-inline my-2 my-lg-2">
             <div class="form-group">
                 <input required type="text"
 				   popover-trigger="focus"
 				   placeholder="Nickname"
 				   class="form-control"
 				   ng-model="query.query"
-				   ng-model-onblur focus-on="focusMe"
-				   ng-keyup="$event.keyCode == 13 ? findUsers() : null"
-				   typeahead="item for item in autocomplete($viewValue)"
+                   uib-typeahead="item for item in autocomplete($viewValue)"
 				   typeahead-on-select="findUsers()"
-				 />
+                 />
 
-                <button type="submit" class="btn btn-default">Submit</button>
+                <button type="submit" class="btn btn-outline-success my-2 my-sm-0">Submit</button>
             </div>
         </form>
     </div>

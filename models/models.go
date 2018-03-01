@@ -3,7 +3,7 @@ package models
 // User holds info about AM user.
 type User struct {
 	Pnum     int64     `json:"id,omitempty" gorethink:"id"`
-	Email    string    `json:"email,omitempty" gorethink:"email"`
+	Email    *string   `json:"email,omitempty" gorethink:"email"`
 	Dob      *string   `json:"dob,omitempty" gorethink:"dob"`
 	Weight   *int      `json:"weight,omitempty" gorethink:"weight"`
 	Height   *int      `json:"height,omitempty" gorethink:"height"`
@@ -23,7 +23,11 @@ func ParseUser(value interface{}) (User, error) {
 	id := values["id"].(float64)
 	usr.Pnum = int64(id)
 
-	usr.Email = values["email"].(string)
+	if values["email"] != nil {
+		email := values["email"].(string)
+		usr.Email = &email
+	}
+
 	if values["dob"] != nil {
 		dob := values["dob"].(string)
 		usr.Dob = &dob
@@ -93,28 +97,25 @@ const ElasticMappingString = `
             "mappings" : {
                 "user" : {
                     "properties" : {
-                        "id" : { "type" : "string", "index" : "not_analyzed" },
-                        "email" : { "type" : "string", "index" : "not_analyzed" },
+                        "id" : { "type" : "text", "index" : "not_analyzed" },
+                        "email" : { "type" : "text", "index" : "not_analyzed" },
                         "dob" : { "type" : "date" },
                         "weight" : { "type" : "integer" },
                         "height" : { "type" : "integer" },
                         "nickname" : {
-                            "type" : "multi_field",
+                            "type" : "text",
+                            "analyzer": "nickname",
                             "fields" : {
-                                "nickname" : {
-                                    "type" : "string",
-                                    "analyzer" : "nickname"
-                                },
                                 "autocomplete" : {
-                                    "type" : "string",
-                                    "index_analyzer" : "nickname_autocomplete",
+                                    "type" : "text",
+                                    "analyzer" : "nickname_autocomplete",
                                     "search_analyzer" : "nickname"
                                 }
                             }
                         },
                         "country" : { "type" : "integer" },
-                        "city" : { "type" : "string" },
-                        "caption" : { "type" : "string", "index" : "analyzed" },
+                        "city" : { "type" : "text" },
+                        "caption" : { "type" : "text", "index" : "analyzed" },
                         "location" : { "type" : "geo_point" },
                         "gender" : { "type" : "integer" }
                     }

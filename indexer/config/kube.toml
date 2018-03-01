@@ -1,0 +1,4 @@
+Brokers = [ "broker.kafka:9092" ]
+Topic = "time-series"
+
+Elastics = [ "http://elasticsearch.elastic:9200" ]

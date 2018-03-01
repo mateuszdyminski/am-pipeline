@@ -1,0 +1,4 @@
+Host = ":8080"
+Statics = "/usr/share/web/statics"
+
+Elastics = [ "http://elasticsearch.elastic:9200" ]

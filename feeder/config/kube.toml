@@ -1,0 +1,7 @@
+Brokers = [ "broker.kafka:9092" ]
+Topic = "time-series"
+
+SourceDataType = "csv"
+
+DbString = "root:password@tcp(mysql:3306)/am"
+CsvPath = "data/am-users.csv"

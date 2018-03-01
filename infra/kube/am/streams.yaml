@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: streams
+  namespace: am
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  template:
+    metadata:
+      labels:
+        app: streams
+    spec:
+      containers:
+      - name: streams
+        image: index.docker.io/mateuszdyminski/streams:latest
+        resources:
+            requests:
+              memory: 200Mi
+              cpu: 200m

@@ -1,0 +1,149 @@
+Kafka Basics
+
+Mateusz Dymiński
+Nokia
+
+[[github.com/mateuszdyminski/am-pipeline][github.com/mateuszdyminski/am-pipeline]]
+@m_dyminski
+
+* Agenda
+
+- What is Apache Kafka?
+- Kafka building blocks
+- Kafka Streams
+- Demo
+
+
+* What is Kafka?
+
+Kafka is a messaging system that is designed to be fast, scalable, and durable. 
+
+- It is an open-source stream processing platform. 
+- Originated at LinkedIn and later became an open-source Apache project in 2011
+- Kafka is written in Scala and Java. 
+- It aims at providing a high-throughput, low-latency platform for handling real-time data feeds.
+
+* What is Kafka?
+
+Apache describes Kafka as a distributed streaming platform that lets us:
+
+- Publish and subscribe to streams of records.
+- Store streams of records in a fault-tolerant way.
+- Process streams of records as they occur.
+
+* What is Messaging System?
+
+A messaging system is a system that is used for transferring data from one application to another so that the applications can focus on data and not on how to share it. 
+
+- Kafka is a distributed publish-subscribe messaging system. 
+- In a publish-subscribe system, messages are persisted in a topic. 
+- Message producers are called publishers and message consumers are called subscribers. 
+- Consumers can subscribe to one or more topic and consume all the messages in that topic.
+
+* Kafka main Pros
+
+- *Reliability* Kafka is distributed, partitioned, replicated, and fault tolerant. Kafka replicates data and is able to support multiple subscribers. Additionally, it automatically balances consumers in the event of failure.
+
+- *Scalability* Kafka is a distributed system that scales quickly and easily without incurring any downtime.
+
+- *Durability* Kafka uses a distributed commit log, which means messages persists on disk as fast as possible providing intra-cluster replication, hence it is durable.
+
+- *Performance* Kafka has high throughput for both publishing and subscribing messages. It maintains stable performance even when dealing with many terabytes of stored messages.
+
+* Basics of Kafka
+
+* Basics of Kafka
+
+Apache.org states that:
+
+- Kafka runs as a cluster on one or more servers.
+- The Kafka cluster stores a stream of records in categories called topics.
+- Each record consists of a key, a value, and a timestamp.
+
+* Topics and Logs
+
+A topic is a feed name or category to which records are published. Topics in Kafka are always multi-subscriber — that is, a topic can have zero, one, or many consumers that subscribe to the data written to it. For each topic, the Kafka cluster maintains a partition log that looks like this:
+
+.image imgs/topics.jpg 400 _
+
+* Partitions
+
+A topic may have many partitions so that it can handle an arbitrary amount of data. In the below diagram, the topic is configured into three partitions (partition{0,1,2}). Partition0 has 13 offsets, Partition1 has 10 offsets, and Partition2 has 13 offsets.
+
+.image imgs/log_anatomy.png 400 _
+
+* Partition Offset
+
+Each partitioned message has a unique sequence ID called an offset. 
+
+.image imgs/log_consumer.png 400 _
+
+* Replicas
+
+Replicas are nothing but backups of a partition. If the replication factor of the above topic is set to 4, then Kafka will create four identical replicas of each partition and place them in the cluster to make them available for all its operations. Replicas are never used to read or write data. They are used to prevent data loss.
+
+.image imgs/kafka_replication.png 250 _
+
+* Brokers
+
+Brokers are simple systems responsible for maintaining published data. Kafka brokers are stateless, so they use ZooKeeper for maintaining their cluster state. Each broker may have zero or more partitions per topic. 
+
+.image imgs/brokers.png 450 _
+
+* Zookeeper
+
+ZooKeeper is used for managing and coordinating Kafka brokers. ZooKeeper is mainly used to notify producers and consumers about the presence of any new broker in the Kafka system or about the failure of any broker in the Kafka system. ZooKeeper notifies the producer and consumer about the presence or failure of a broker based on which producer and consumer makes a decision and starts coordinating their tasks with some other broker.
+
+* Cluster
+
+When Kafka has more than one broker, it is called a Kafka cluster. A Kafka cluster can be expanded without downtime. These clusters are used to manage the persistence and replication of message data.
+
+Kafka has four core APIs:
+
+- The *Producer* *API* allows an application to publish a stream of records to one or more Kafka topics.
+- The *Consumer* *API* allows an application to subscribe to one or more topics and process the stream of records produced to them.
+- The *Streams* *API* allows an application to act as a stream processor, consuming an input stream from one or more topics and producing an output stream to one or more output topics, effectively transforming the input streams to output streams.
+- The *Connector* *API* allows building and running reusable producers or consumers that connect Kafka topics to existing applications or data systems. For example, a connector to a relational database might capture every change to a table.
+
+* Kafka APIs
+
+.image imgs/kafka-apis.png 600 _
+
+* Kafka Producer - java
+
+.code code/SimpleProducer.java
+
+* Kafka Consumer - java
+
+.code code/SimpleConsumer.java
+
+* Kafka streams - java
+
+* Kafka on Kubernetes
+
+* Kafka on Kubernetes(Minikube)
+
+I have used [[https://github.com/Yolean/kubernetes-kafka][https://github.com/Yolean/kubernetes-kafka]]
+
+    git clone https://github.com/Yolean/kubernetes-kafka.git
+
+*Note:*
+
+Change *line* *84* in file *kafka/50kafka.yaml*
+
+    storage: 200Gi -> storage: 2Gi
+
+Then: 
+
+    kubectl apply -f configure
+    kubectl apply -f rbac-namespace-default
+    kubectl apply -f zookeeper
+    kubectl apply -f kafka
+
+* Demo
+
+* Hackathon Tips&Tricks
+
+- If you would like to achieve best throughput - don't use Apache Kafka
+Options: [[http://queues.io/][http://queues.io/]]
+

@@ -1,0 +1,71 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: zoo
+  namespace: kafka
+spec:
+  selector:
+    matchLabels:
+      app: zookeeper
+      storage: ephemeral
+  serviceName: "zoo"
+  replicas: 2
+  updateStrategy:
+    type: OnDelete
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+        storage: ephemeral
+      annotations:
+    spec:
+      terminationGracePeriodSeconds: 10
+      initContainers:
+      - name: init-config
+        image: solsson/kafka:1.0.0@sha256:17fdf1637426f45c93c65826670542e36b9f3394ede1cb61885c6a4befa8f72d
+        command: ['/bin/bash', '/etc/kafka/init.sh']
+        env:
+        - name: ID_OFFSET
+          value: "4"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/kafka
+        - name: data
+          mountPath: /var/lib/zookeeper/data
+      containers:
+      - name: zookeeper
+        image: solsson/kafka:1.0.0@sha256:17fdf1637426f45c93c65826670542e36b9f3394ede1cb61885c6a4befa8f72d
+        env:
+        - name: KAFKA_LOG4J_OPTS
+          value: -Dlog4j.configuration=file:/etc/kafka/log4j.properties
+        command:
+        - ./bin/zookeeper-server-start.sh
+        - /etc/kafka/zookeeper.properties
+        ports:
+        - containerPort: 2181
+          name: client
+        - containerPort: 2888
+          name: peer
+        - containerPort: 3888
+          name: leader-election
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100Mi
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - '[ "imok" = "$(echo ruok | nc -w 1 -q 1 127.0.0.1 2181)" ]'
+        volumeMounts:
+        - name: config
+          mountPath: /etc/kafka
+        - name: data
+          mountPath: /var/lib/zookeeper/data
+      volumes:
+      - name: config
+        configMap:
+          name: zookeeper-config
+      - name: data
+        emptyDir: {}

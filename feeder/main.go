@@ -11,13 +11,15 @@ import (
 	"os/signal"
 	"strconv"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 
 	"database/sql"
+
 	"github.com/BurntSushi/toml"
 	"github.com/Shopify/sarama"
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/mateuszdyminski/am-pipeline/models"
 )
 
@@ -72,7 +74,7 @@ func streamUsers(conf *Config) chan models.User {
 }
 
 func streamDbUsers(conf *Config) chan models.User {
-	db, err := sql.Open("postgres", conf.DbString)
+	db, err := sql.Open("mysql", conf.DbString)
 	if err != nil {
 		log.Fatal("can't open database conn:", err)
 	}
@@ -81,9 +83,9 @@ func streamDbUsers(conf *Config) chan models.User {
 
 	out := make(chan models.User, 1024)
 	go func() {
-		rows, err := db.Query("select pnum, email, dob, weight, height, nickname, country, city, caption, longitude, latitude, gender from aminno_member limit 1000000")
+		rows, err := db.Query("select pnum, dob, weight, height, nickname, country, city, caption, longitude, latitude, gender from aminno_member LIMIT 100000")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("can't run query. err: %v", err)
 		}
 		defer rows.Close()
 
@@ -91,13 +93,13 @@ func streamDbUsers(conf *Config) chan models.User {
 		for rows.Next() {
 			u := models.User{}
 			u.Location = &models.Location{}
-			if err := rows.Scan(&u.Pnum, &u.Email, &u.Dob, &u.Weight, &u.Height, &u.Nickname, &u.Country, &u.City, &u.Caption, &u.Location.Longitude, &u.Location.Latitude, &u.Gender); err != nil {
-				log.Fatal(err)
+			if err := rows.Scan(&u.Pnum, &u.Dob, &u.Weight, &u.Height, &u.Nickname, &u.Country, &u.City, &u.Caption, &u.Location.Longitude, &u.Location.Latitude, &u.Gender); err != nil {
+				log.Fatalf("can't scan values. err: %v", err)
 			}
 
 			out <- u
 
-			if noOfUsers % 100 == 0 {
+			if noOfUsers%100 == 0 {
 				log.Printf("Total no of read users: %v", noOfUsers)
 			}
 
@@ -164,7 +166,7 @@ func streamCsvUsers(conf *Config) chan models.User {
 				log.Warningf("At least one value of location could be wrong. Vals long, %d, lat: %d", long, lat)
 			}
 
-			u.Email = line[3]
+			u.Email = &line[3]
 			weight, err := strconv.Atoi(line[4])
 			if err != nil {
 				log.Fatalf("Can't deserialize weight. Val: %s", line[4])
@@ -203,6 +205,8 @@ func streamCsvUsers(conf *Config) chan models.User {
 
 func pumpData(conf *Config, users chan models.User) {
 	config := sarama.NewConfig()
+	config.Version = sarama.V1_0_0_0
+	config.Producer.Retry.Max = 10
 	config.Producer.Return.Successes = true
 	producer, err := sarama.NewAsyncProducer(conf.Brokers, config)
 	if err != nil {
@@ -238,7 +242,12 @@ func pumpData(conf *Config, users chan models.User) {
 ProducerLoop:
 	for user := range users {
 		b, _ := json.Marshal(user)
-		message := &sarama.ProducerMessage{Topic: conf.Topic, Value: sarama.ByteEncoder(b)}
+		message := &sarama.ProducerMessage{
+			Topic:     conf.Topic,
+			Key:       sarama.StringEncoder(user.Pnum),
+			Value:     sarama.ByteEncoder(b),
+			Timestamp: time.Now(),
+		}
 		select {
 		case producer.Input() <- message:
 			enqueued++
@@ -249,7 +258,7 @@ ProducerLoop:
 		}
 	}
 
-	producer.AsyncClose()
+	producer.Close()
 
 	wg.Wait()
 

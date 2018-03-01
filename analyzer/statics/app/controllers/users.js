@@ -15,19 +15,19 @@ angular.module('AM').controller('UsersCtrl', function($scope, $location, UsersSe
         $scope.query.l = $scope.itemsPerPage;
         $scope.query.w = $scope.query.wildcard;
 
-        UsersService.findUsers($scope.query)
-            .success(function(response, status, headers) {
-                $scope.users = response.users;
-                $scope.total = response.total;
+        UsersService.findUsers($scope.query).then(
+            function(response) {
+                $scope.users = response.data.users;
+                $scope.total = response.data.total;
 
                 if ($scope.users === undefined || $scope.users.length === 0) {
                     $scope.markers = undefined;
                     toastr.error("It seems that we don't have any user which meets your criteria!");
                 } else {
                     if ($scope.currentPage === 1) {
-                        toastr.info("We found " + response.total + " users which meet your criteria");
+                        toastr.info("We found " + response.data.total + " users which meet your criteria");
                     }
-                    $scope.markers = response.users.map(function(user) {
+                    $scope.markers = response.data.users.map(function(user) {
                         return {
                             lng: user.location.lon,
                             lat: user.location.lat,
@@ -36,8 +36,8 @@ angular.module('AM').controller('UsersCtrl', function($scope, $location, UsersSe
                         };
                     });
                 }
-            })
-            .error(function(response) {
+            }, 
+            function(response) {
 
             });
     };
@@ -58,13 +58,13 @@ angular.module('AM').controller('UsersCtrl', function($scope, $location, UsersSe
     }
 
     $scope.aggregations = function() {
-        UsersService.aggregations($scope.query)
-            .success(function(response, status, headers) {
+        UsersService.aggregations($scope.query).then(
+            function (response, status, headers){
                 $scope.buckets = response;
-            })
-            .error(function(response) {
-
-            });
+            },function (error){
+         
+            }
+        );
     }
 
     $scope.$on('leafletDirectiveMap.click', function(event, args) {

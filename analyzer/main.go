@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -15,7 +16,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/mateuszdyminski/am-pipeline/models"
-	"gopkg.in/olivere/elastic.v2"
+	"gopkg.in/olivere/elastic.v5"
 )
 
 var configPath string
@@ -57,7 +58,7 @@ func main() {
 }
 
 func launchServer(conf *Config) {
-	client, err := elastic.NewClient(elastic.SetURL(conf.Elastics...), elastic.SetTraceLog(standardLog.New(os.Stdout, "", standardLog.LstdFlags)))
+	client, err := elastic.NewClient(elastic.SetURL(conf.Elastics...), elastic.SetSniff(true), elastic.SetTraceLog(standardLog.New(os.Stdout, "", standardLog.LstdFlags)))
 	if err != nil {
 		log.Fatalf("Can't create elastic client. Err: %v", err)
 	}
@@ -167,8 +168,9 @@ func (r *RestApi) users(w http.ResponseWriter, req *http.Request) {
 		log.Infof("Start searching for users in distance: %s from (lat, lng): (%f, %f)", distance, lat, long)
 
 		// Search with a geo query
-		geoQuery := elastic.NewGeoDistanceFilter("location").Distance(distance + "km").Lat(lat).Lon(long)
-		elasticQuery = elastic.NewFilteredQuery(elastic.NewMatchAllQuery()).Filter(geoQuery)
+		geoQuery := elastic.NewGeoDistanceQuery("location").Distance(distance + "km").Lat(lat).Lon(long)
+
+		elasticQuery = elastic.NewBoolQuery().Must(elastic.NewMatchAllQuery()).Filter(geoQuery)
 	} else {
 		log.Infof("Start searching for users: %s", query)
 
@@ -179,8 +181,6 @@ func (r *RestApi) users(w http.ResponseWriter, req *http.Request) {
 			// Search with a term query
 			elasticQuery = elastic.NewMatchQuery(field, query)
 		}
-
-
 	}
 
 	searchResult, err := r.e.Search().
@@ -188,7 +188,7 @@ func (r *RestApi) users(w http.ResponseWriter, req *http.Request) {
 		Type("user").
 		Query(elasticQuery).
 		From(skipInt).Size(sizeInt).
-		Do()
+		Do(context.Background())
 	if err != nil {
 		fmt.Fprintf(w, "Can't search for users. Err: %v", err)
 		return
@@ -244,9 +244,9 @@ func (r *RestApi) nickAutocomplete(w http.ResponseWriter, req *http.Request) {
 	searchResult, err := r.e.Search().
 		Index("users").
 		Type("user").
-		Query(&matchQuery).
+		Query(matchQuery).
 		From(0).Size(20).
-		Do()
+		Do(context.Background())
 	if err != nil {
 		fmt.Fprintf(w, "Can't search for autocomplete. Err: %v", err)
 		return
@@ -299,7 +299,7 @@ func (r *RestApi) aggregations(w http.ResponseWriter, req *http.Request) {
 		Index("users").
 		Type("user").
 		Aggregation("top_field", termsAgg).
-		Do()
+		Do(context.Background())
 	if err != nil {
 		fmt.Fprintf(w, "Can't search for autocomplete. Err: %v", err)
 		return

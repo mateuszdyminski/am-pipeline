@@ -3,5 +3,5 @@ Topic = "time-series"
 
 SourceDataType = "db"
 
-DbString = "dbname=imtdev host=localhost user=imtdev password=imt port=5432 sslmode=disable"
-CsvPath = "feeder/data/am-users.csv"
+DbString = "root:password@tcp(10.74.35.185:30224)/am"
+CsvPath = "data/am-users.csv"
