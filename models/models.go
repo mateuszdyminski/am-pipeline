@@ -95,7 +95,7 @@ const ElasticMappingString = `
                 }
             },
             "mappings" : {
-                "user" : {
+                "_doc" : {
                     "properties" : {
                         "id" : { "type" : "text", "index" : "not_analyzed" },
                         "email" : { "type" : "text", "index" : "not_analyzed" },
