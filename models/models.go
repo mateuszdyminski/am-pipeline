@@ -96,8 +96,8 @@ const ElasticMappingString = `
             },
             "mappings" : {
                 "properties" : {
-                    "id" : { "type" : "text", "index" : "not_analyzed" },
-                    "email" : { "type" : "text", "index" : "not_analyzed" },
+                    "id" : { "type" : "text" },
+                    "email" : { "type" : "text" },
                     "dob" : { "type" : "date" },
                     "weight" : { "type" : "integer" },
                     "height" : { "type" : "integer" },
@@ -114,7 +114,7 @@ const ElasticMappingString = `
                     },
                     "country" : { "type" : "integer" },
                     "city" : { "type" : "text" },
-                    "caption" : { "type" : "text", "index" : "analyzed" },
+                    "caption" : { "type" : "text" },
                     "location" : { "type" : "geo_point" },
                     "gender" : { "type" : "integer" }
                 }
