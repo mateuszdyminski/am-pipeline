@@ -96,30 +96,28 @@ const ElasticMappingString = `
                 }
             },
             "mappings" : {
-                "_doc" : {
-                    "properties" : {
-                        "id" : { "type" : "text", "index" : "not_analyzed" },
-                        "email" : { "type" : "text", "index" : "not_analyzed" },
-                        "dob" : { "type" : "date" },
-                        "weight" : { "type" : "integer" },
-                        "height" : { "type" : "integer" },
-                        "nickname" : {
-                            "type" : "text",
-                            "analyzer": "nickname",
-                            "fields" : {
-                                "autocomplete" : {
-                                    "type" : "text",
-                                    "analyzer" : "nickname_autocomplete",
-                                    "search_analyzer" : "nickname"
-                                }
+                "properties" : {
+                    "id" : { "type" : "text", "index" : "not_analyzed" },
+                    "email" : { "type" : "text", "index" : "not_analyzed" },
+                    "dob" : { "type" : "date" },
+                    "weight" : { "type" : "integer" },
+                    "height" : { "type" : "integer" },
+                    "nickname" : {
+                        "type" : "text",
+                        "analyzer": "nickname",
+                        "fields" : {
+                            "autocomplete" : {
+                                "type" : "text",
+                                "analyzer" : "nickname_autocomplete",
+                                "search_analyzer" : "nickname"
                             }
-                        },
-                        "country" : { "type" : "integer" },
-                        "city" : { "type" : "text" },
-                        "caption" : { "type" : "text", "index" : "analyzed" },
-                        "location" : { "type" : "geo_point" },
-                        "gender" : { "type" : "integer" }
-                    }
+                        }
+                    },
+                    "country" : { "type" : "integer" },
+                    "city" : { "type" : "text" },
+                    "caption" : { "type" : "text", "index" : "analyzed" },
+                    "location" : { "type" : "geo_point" },
+                    "gender" : { "type" : "integer" }
                 }
             }
         }`
