@@ -73,6 +73,7 @@ type Location struct {
 const ElasticMappingString = `
         {
             "settings" : {
+                "index.mapping.single_type": true,
                 "analysis" : {
                     "filter" : {
                         "autocomplete" : {
