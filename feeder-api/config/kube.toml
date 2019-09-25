@@ -1,0 +1,4 @@
+Brokers = [ "kafka-cluster-kafka-bootstrap.kafka:9092" ]
+Topic = "users"
+
+HTTPPort = 8080
