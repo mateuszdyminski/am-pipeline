@@ -1,4 +1,8 @@
-Brokers = [ "broker.kafka:9092" ]
-Topic = "time-series"
+Brokers = [ "kafka-cluster-kafka-bootstrap.kafka:9092" ]
+Topic = "users"
+ReadFromOldest = false
+HTTPPort = 8080
 
-Elastics = [ "http://elasticsearch.elastic:9200" ]
+Elastics = [ "https://elastic-cluster-es-http.elastic:9200" ]
+ElasticUser = "elastic"
+ElasticPassword = "password"
