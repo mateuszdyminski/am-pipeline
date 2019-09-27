@@ -1,0 +1,67 @@
+<div ng-controller="UsersCtrl">
+    <div>
+    	<div ng-init="query.field = 'nickname'"></div>
+        <form ng-submit="findUsers()" class="form-inline my-2 my-lg-2">
+            <div class="form-group">
+                <input required type="text"
+				   popover-trigger="focus"
+				   placeholder="Nickname"
+				   class="form-control"
+				   ng-model="query.query"
+                   uib-typeahead="item for item in autocomplete($viewValue)"
+				   typeahead-on-select="findUsers()"
+                 />
+
+                <button type="submit" class="btn btn-outline-success my-2 my-sm-0">Submit</button>
+            </div>
+        </form>
+    </div>
+    <div>
+        <div>
+        	<leaflet width="100%" height="500px" markers="markers"></leaflet>
+            
+            <div align="center">
+                <pagination ng-show="pageCount > 0" max-size="10"
+                    items-per-page="itemsPerPage"
+                    class="pagination-sm"
+                    boundary-links="true"
+                    rotate="true"
+                    total-items="total"
+                    ng-model="currentPage"
+                    num-pages="pageCount">
+                </pagination>
+            </div>
+
+            <table class="standard-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Nickname</th>
+                        <th>Gender</th>
+                        <th>DoB</th>
+                        <th>Email</th>
+                        <th>Country</th>
+                        <th>City</th>
+                        <th>Weight</th>
+                        <th>Height</th>
+                        <th>Caption</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="user in users" style="border-bottom: solid 1px #fff;">
+                        <td>{{user.nickname}}</td>
+                        <td><span ng-show="user.gender === 1">female</span><span ng-show="user.gender === 2">male</span></td>
+                        <td>{{user.dob}}</td>
+                        <td>{{user.email}}</td>
+                        <td>{{user.country}}</td>
+                        <td>{{user.city}}</td>
+                        <td>{{user.weight / 1000}}</td>
+                        <td>{{user.height}}</td>
+                        <td>{{user.caption}}</td>
+                        <td>{{user.score}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

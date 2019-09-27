@@ -1,0 +1,13 @@
+0.0.0.0
+
+browse
+
+tls off
+
+log stdout
+
+errors stdout
+
+root /web/statics
+    
+gzip

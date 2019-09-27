@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="node_modules/leaflet/dist/leaflet.css">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="node_modules/angular-toastr/dist/angular-toastr.css">
+
+    <!-- Dependencies -->    
+    <script type="text/javascript" src="node_modules/angular/angular.min.js"></script>
+    <script type="text/javascript" src="node_modules/angular-route/angular-route.min.js"></script>
+    <script type="text/javascript" src="node_modules/angular-leaflet-directive/dist/angular-leaflet-directive.min.js"></script>
+    <script type="text/javascript" src="node_modules/angular-simple-logger/dist/angular-simple-logger.min.js"></script>
+    <script type="text/javascript" src="node_modules/angular-ui-bootstrap/dist/ui-bootstrap-tpls.js"></script>
+    <script type="text/javascript" src="node_modules/angular-toastr/dist/angular-toastr.tpls.min.js"></script>
+    <script type="text/javascript" src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="node_modules/leaflet/dist/leaflet.js"></script>
+    <script type="text/javascript" src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    
+    <!-- Angular start script -->
+    <script src="app/app.js"></script>
+
+    <!-- Controllers -->
+    <script src="app/controllers/users.js"></script>
+    <script src="app/controllers/menu.js"></script>
+    
+    <!-- Services -->
+    <script src="app/services/users-srv.js"></script>
+</head>
+    <body id="ng-app" ng-app="AM">
+        <nav class="navbar navbar-toggleable-md navbar-light bg-faded">
+            <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <a class="navbar-brand" href="#">AM</a>
+          
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav mr-auto">
+                  <li class="nav-item" ng-class="{active: isActive('/full')}"><a class="nav-link"href="#!/full">Full text search</a></li>
+                  <li class="nav-item" ng-class="{active: isActive('/auto')}"><a class="nav-link" href="#!/auto">Autocomplete</a></li>
+                  <li class="nav-item" ng-class="{active: isActive('/facets')}"><a class="nav-link" href="#!/facets">Facets</a></li>
+                  <li class="nav-item" ng-class="{active: isActive('/geo')}"><a class="nav-link" href="#!/geo">Geo distance</a></li>
+              </ul>
+            </div>
+          </nav>
+
+          <!-- <div ng-controller="MenuCtrl">
+        <nav class="navbar navbar-default" role="navigation">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                  <a class="navbar-brand" href="#">Elasticsearch</a>
+                </div>
+
+                <div class="collapse navbar-collapse" uib-collapse="isNavCollapsed">
+                  <ul class="nav navbar-nav">
+                    <li ng-class="{active: isActive('/full')}"><a href="#/full">Full text search</a></li>
+                    <li ng-class="{active: isActive('/auto')}"><a href="#/auto">Autocomplete</a></li>
+                    <li ng-class="{active: isActive('/facets')}"><a href="#/facets">Facets</a></li>
+                    <li ng-class="{active: isActive('/geo')}"><a href="#/geo">Geo distance</a></li>
+                  </ul>
+                </div>
+            </div>
+        </nav>
+        </div> -->
+
+	    <div class="container" ng-view></div>
+	</body>
+</html>

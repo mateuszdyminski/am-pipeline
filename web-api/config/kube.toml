@@ -1,0 +1,9 @@
+Brokers = [ "kafka-cluster-kafka-bootstrap.kafka:9092" ]
+Topic = "users"
+
+HTTPPort = 8080
+EnableCORS = true
+
+Elastics = [ "https://elastic-cluster-es-http.elastic:9200" ]
+ElasticUser = "elastic"
+ElasticPassword = "password"

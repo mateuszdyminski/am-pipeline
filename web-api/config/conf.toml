@@ -1,0 +1,9 @@
+Brokers = [ "192.168.99.100:32400", "192.168.99.100:32401", "192.168.99.100:32402" ]
+Topic = "users"
+
+HTTPPort = 8080
+EnableCORS = true
+
+Elastics = [ "http://127.0.0.1:9200" ]
+ElasticUser = "elastic"
+ElasticPassword = "password"

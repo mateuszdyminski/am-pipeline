@@ -1,0 +1,13 @@
+body {
+    background: #fafafa;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #333;
+}
+
+.container {
+    margin-top: 90px;
+}
+
+.container-fluid {
+    background-color: #ffffff;
+}

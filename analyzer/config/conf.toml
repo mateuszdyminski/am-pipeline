@@ -1,4 +1,0 @@
-Host = ":9000"
-Statics = "statics"
-
-Elastics = [ "http://127.0.0.1:9200" ]
