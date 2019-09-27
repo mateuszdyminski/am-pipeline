@@ -45,4 +45,4 @@ COPY config/kube.toml /indexer/config/
 COPY --from=builder /tmp/build/${NAME}-${VERSION} /usr/bin/${NAME}
 
 # Exec
-CMD ["indexer", "--config=/indexer/config/kube.toml"]
+CMD ["am-indexer", "--config=/indexer/config/kube.toml"]
