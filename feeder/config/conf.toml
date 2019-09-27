@@ -1,7 +1,7 @@
-Brokers = [ "127.0.0.1:9092" ]
-Topic = "time-series"
+Brokers = [ "192.168.99.100:32400", "192.168.99.100:32401", "192.168.99.100:32402" ]
+Topic = "users"
 
-SourceDataType = "db"
+SourceDataType = "csv"
 
 DbString = "root:password@tcp(10.74.35.185:30224)/am"
-CsvPath = "data/am-users.csv"
+CsvPath = "data/100-users.csv"

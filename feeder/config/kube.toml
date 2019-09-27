@@ -1,7 +1,8 @@
-Brokers = [ "broker.kafka:9092" ]
-Topic = "time-series"
+Brokers = [ "kafka-cluster-kafka-bootstrap.kafka:9092" ]
+Topic = "users"
 
 SourceDataType = "csv"
 
 DbString = "root:password@tcp(mysql:3306)/am"
-CsvPath = "data/am-users.csv"
+CsvPath = "/feeder/data/100-users.csv"
+PushgatewayAddress = "prometheus-pushgateway.monitoring:9091" 

@@ -1,13 +1,47 @@
-FROM golang:1.10-alpine
+# Arguments
+ARG GOLANG_VERSION
+ARG ALPINE_VERSION
 
-RUN mkdir -p /usr/share/feeder
+# Build part
+FROM golang:${GOLANG_VERSION}-alpine${ALPINE_VERSION} AS builder
 
-WORKDIR /usr/share/feeder
+RUN apk --no-cache add make git; \
+    adduser -D -h /tmp/build build
+USER build
+WORKDIR /tmp/build
+COPY --chown=build Makefile Makefile
+COPY --chown=build go.mod go.mod
+COPY --chown=build go.sum go.sum
+RUN go mod download
 
-COPY config/kube.toml ./config/kube.toml
+ARG VERSION
+ARG NAME
+ARG BUILD_TIME
+ARG LAST_COMMIT_USER
+ARG LAST_COMMIT_HASH
+ARG LAST_COMMIT_TIME
 
-COPY data ./data
+COPY --chown=build main.go main.go
+RUN make build
 
-ADD build/feeder /usr/share/feeder/feeder
+# Exec part
+FROM alpine:${ALPINE_VERSION}
 
-ENTRYPOINT /usr/share/feeder/feeder -config=/usr/share/feeder/config/kube.toml
+ARG VERSION
+ARG NAME
+
+RUN mkdir -p /feeder
+RUN chown guest /feeder
+USER guest
+
+# Copy from repo
+RUN mkdir -p /feeder/data
+RUN mkdir -p /feeder/config
+COPY data/100-users.csv /feeder/data/100-users.csv
+COPY config/kube.toml /feeder/config/
+
+# Copy from builder
+COPY --from=builder /tmp/build/${NAME}-${VERSION} /usr/bin/${NAME}
+
+# Exec
+CMD ["am-feeder", "--config=/feeder/config/kube.toml"]
