@@ -45,4 +45,4 @@ COPY config/kube.toml /feeder/config/
 COPY --from=builder /tmp/build/${NAME}-${VERSION} /usr/bin/${NAME}
 
 # Exec
-CMD ["feeder-api", "--config=/feeder/config/kube.toml"]
+CMD ["am-feeder-api", "--config=/feeder/config/kube.toml"]

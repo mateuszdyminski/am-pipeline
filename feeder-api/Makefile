@@ -1,7 +1,7 @@
-GOLANG_VERSION := 1.13
+GOLANG_VERSION := 1.13.1
 ALPINE_VERSION := 3.10
 
-NAME ?= $(shell echo $${PWD\#\#*/})
+NAME ?= am-$(shell echo $${PWD\#\#*/})
 VERSION ?= $(shell git describe --always)
 BUILD_TIME ?= $(shell date -u '+%Y-%m-%d %H:%M:%S')
 LAST_COMMIT_USER ?= $(shell git log -1 --format='%cn <%ce>')
