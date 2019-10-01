@@ -5,3 +5,6 @@ target
 *.iml
 vendor
 .DS_Store
+.classpath
+.project
+.settings
