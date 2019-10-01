@@ -1,0 +1,18 @@
+[
+    {
+        "id": 2,
+        "email": "testavawroclaw@test.com",
+        "dob": "1988-01-18",
+        "weight": 88,
+        "height": 193,
+        "nickname": "mateusz",
+        "country": 1,
+        "city": "Wroclaw",
+        "caption": "Witam !",
+        "location": {
+            "lon": 16.9777773,
+            "lat": 51.12609628
+        },
+        "gender": 2
+    }
+]
