@@ -1,0 +1,71 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+ name: feeder-api
+ namespace: am
+spec:
+ tls:
+   - hosts:
+     - feeder.BASE_DN
+     secretName: tls
+ rules:
+   - host: feeder.BASE_DN
+     http:
+       paths:
+       - backend:
+           serviceName: feeder-api
+           servicePort: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+ name: web-api
+ namespace: am
+spec:
+ tls:
+   - hosts:
+     - api.BASE_DN
+     secretName: tls
+ rules:
+   - host: api.BASE_DN
+     http:
+       paths:
+       - backend:
+           serviceName: web-api
+           servicePort: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+ name: indexer
+ namespace: am
+spec:
+ tls:
+   - hosts:
+     - indexer.BASE_DN
+     secretName: tls
+ rules:
+   - host: indexer.BASE_DN
+     http:
+       paths:
+       - backend:
+           serviceName: indexer
+           servicePort: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+ name: web-ui
+ namespace: am
+spec:
+ tls:
+   - hosts:
+     - web.BASE_DN
+     secretName: tls
+ rules:
+   - host: web.BASE_DN
+     http:
+       paths:
+       - backend:
+           serviceName: web-ui
+           servicePort: 2015

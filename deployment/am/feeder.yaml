@@ -11,10 +11,11 @@ spec:
     spec:
       containers:
       - name: feeder
-        image: index.docker.io/mateuszdyminski/feeder:latest
+        image: index.docker.io/mateuszdyminski/am-feeder:latest
+        imagePullPolicy: Always
         resources:
             requests:
               memory: 100Mi
-              cpu: 200m
+              cpu: 500m
       restartPolicy: Never
-  backoffLimit: 4
+  backoffLimit: 1

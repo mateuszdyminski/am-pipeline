@@ -1,0 +1,52 @@
+---
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: elastic
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elastic-cluster-es-elastic-user
+  namespace: elastic
+type: Opaque
+data:
+  elastic: cGFzc3dvcmQ=
+---
+# This sample sets up an Elasticsearch cluster with 3 nodes.
+apiVersion: elasticsearch.k8s.elastic.co/v1alpha1
+kind: Elasticsearch
+metadata:
+  name: elastic-cluster
+  namespace: elastic
+spec:
+  version: 7.2.0
+  nodes:
+  - config:
+      node.master: true
+      node.data: true
+      node.ingest: true
+    podTemplate:
+      metadata:
+        labels:
+      spec:
+        containers:
+        - name: elasticsearch
+          # specify resource limits and requests
+          resources:
+            limits:
+              memory: 3Gi
+              cpu: 500m
+          env:
+          - name: ES_JAVA_OPTS
+            value: "-Xms2g -Xmx2g"
+    nodeCount: 2
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi

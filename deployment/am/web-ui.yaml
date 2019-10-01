@@ -1,0 +1,56 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-ui
+  namespace: am
+  labels:
+    app: web-ui
+spec:
+  ports:
+  - port: 2015
+  selector:
+    app: web-ui
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-ui-minikube
+  namespace: am
+  labels:
+    app: web-ui
+spec:
+  type: NodePort
+  ports:
+  - port: 2015
+    targetPort: 31003
+  selector:
+    app: web-ui
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: web-ui
+  namespace: am
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  template:
+    metadata:
+      labels:
+        app: web-ui
+        serviceName: web-ui
+    spec:
+      containers:
+      - name: web-ui
+        image: index.docker.io/mateuszdyminski/am-web-ui:latest
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 2015
+        env: 
+          - name: API_SERVER
+            value: "api.BASE_DN"
+        resources:
+            requests:
+              memory: 100Mi
+              cpu: 300m
