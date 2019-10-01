@@ -39,7 +39,7 @@ public class Start {
 
         final Topology topology = builder.build();
 
-        final KStream<String, byte[]> users = builder.stream("time-series");
+        final KStream<String, byte[]> users = builder.stream("users");
 
         final ObjectMapper om = new ObjectMapper();
         users
